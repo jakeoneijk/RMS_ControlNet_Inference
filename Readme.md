@@ -28,8 +28,10 @@ git clone https://github.com/jakeoneijk/TorchJaekwon.git
 source ./Script/3_install_torchjk.sh
 ```
 
-* download pretrained module
-[download link](http://www.google.co.kr)
+* download pretrained module. check the folder below (It will be updated for official release)
+```
+/media/daftpunk2/home/junwon/ModelWeight
+```
 
 * move it to the right place
 ```
