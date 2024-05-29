@@ -6,26 +6,45 @@ import numpy
 
 from TorchJaekwon.GetModule import GetModule
 
-from Model.ControlNet.LatentDiffusionControlRMS import LatentDiffusionControlRMS
+from AudioLDMControlNetInfer.Model.ControlNet.LatentDiffusionControlRMS import LatentDiffusionControlRMS
 
 class AudioLDMControlNet:
     def __init__(self,
-                 config_yaml_path:str = './AudioLDMControlNetInfer/ModelWeight/audioldm_original.yaml',
-                 reload_from_ckpt:str = './AudioLDMControlNetInfer/ModelWeight/audioldm-s-full.ckpt',
-                 control_net_pretrained_path:str = './AudioLDMControlNetInfer/ModelWeight/ControlNetstep300000.pth',
+                 config_yaml_path:str,
+                 reload_from_ckpt:str,
+                 control_net_pretrained_path:str,
+                 clap_for_condition_pretrained_path:str,
+                 clap_for_cossim_pretrained_path:str,
+                 vae_pretrained_path:str,
+                 vocoder_pretrained_path:str,
                  device:torch.device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
                  ) -> None:
         self.device = device
-        self.model = self.get_model(config_yaml_path=config_yaml_path, reload_from_ckpt=reload_from_ckpt)
+        self.model = self.get_model(config_yaml_path=config_yaml_path, 
+                                    reload_from_ckpt=reload_from_ckpt, 
+                                    clap_for_condition_pretrained_path=clap_for_condition_pretrained_path, 
+                                    clap_for_cossim_pretrained_path = clap_for_cossim_pretrained_path,
+                                    vae_pretrained_path = vae_pretrained_path, 
+                                    vocoder_pretrained_path = vocoder_pretrained_path)
         self.pretrained_load(control_net_pretrained_path)
         
-    def get_model(self, config_yaml_path:str, reload_from_ckpt:str, model_class_name:str = 'UNetWControlNetRMS') -> None:
+    def get_model(self, 
+                  config_yaml_path:str, 
+                  reload_from_ckpt:str, 
+                  clap_for_condition_pretrained_path:str,
+                  clap_for_cossim_pretrained_path:str,
+                  vae_pretrained_path:str,
+                  vocoder_pretrained_path:str) -> None:
         configs:dict = yaml.load(open(config_yaml_path, "r"), Loader=yaml.FullLoader)
         configs["reload_from_ckpt"] = reload_from_ckpt
+        configs['model']['params']['first_stage_config']['params']['reload_from_ckpt'] = vae_pretrained_path
+        configs['model']['params']['first_stage_config']['params']['vocoder_path'] = vocoder_pretrained_path
+        configs['model']['params']['cond_stage_config']['film_clap_cond1']['params']['pretrained_path'] = clap_for_condition_pretrained_path
         if "precision" in configs.keys(): torch.set_float32_matmul_precision( configs["precision"] )  # highest, high, medium
 
         model_args_dict = configs["model"].get("params", dict())
-        model_args_dict['unet_config']['target'] = GetModule.get_import_path_of_module('./Model', model_class_name) + f'.{model_class_name}'
+        model_args_dict['unet_config']['target'] = 'AudioLDMControlNetInfer.Model.ControlNet.UNetWControlNetRMS.UNetWControlNetRMS'
+        model_args_dict['clap_pretrained_path'] = clap_for_cossim_pretrained_path
         latent_diffusion = LatentDiffusionControlRMS(**model_args_dict)
         return latent_diffusion
     
@@ -45,7 +64,7 @@ class AudioLDMControlNet:
     def generate(self,
                  waveform:Optional[torch.tensor] = None, # [1, time]. for timbre.
                  text_prompt:Optional[str] = None,
-                 rms:torch.tensor = None, #[1, time/hop]. hop = 160
+                 rms:torch.tensor = None, #[1, time/hop]. hop = 160 (16000 * 10.24) / 160 = 1024
                  ) -> numpy.ndarray: #[time]
         assert waveform is not None or text_prompt is not None, 'waveform or text_prompt is needed for timbre'
         generated_audio = self.model.generate_sample(
