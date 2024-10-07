@@ -11,40 +11,28 @@ from AudioLDMControlNetInfer.Model.ControlNet.LatentDiffusionControlRMS import L
 class AudioLDMControlNet:
     def __init__(self,
                  config_yaml_path:str,
-                 reload_from_ckpt:str,
                  control_net_pretrained_path:str,
-                 clap_for_condition_pretrained_path:str,
-                 clap_for_cossim_pretrained_path:str,
                  vae_pretrained_path:str,
                  vocoder_pretrained_path:str,
                  device:torch.device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
                  ) -> None:
         self.device = device
         self.model = self.get_model(config_yaml_path=config_yaml_path, 
-                                    reload_from_ckpt=reload_from_ckpt, 
-                                    clap_for_condition_pretrained_path=clap_for_condition_pretrained_path, 
-                                    clap_for_cossim_pretrained_path = clap_for_cossim_pretrained_path,
                                     vae_pretrained_path = vae_pretrained_path, 
                                     vocoder_pretrained_path = vocoder_pretrained_path)
         self.pretrained_load(control_net_pretrained_path)
         
     def get_model(self, 
                   config_yaml_path:str, 
-                  reload_from_ckpt:str, 
-                  clap_for_condition_pretrained_path:str,
-                  clap_for_cossim_pretrained_path:str,
                   vae_pretrained_path:str,
                   vocoder_pretrained_path:str) -> None:
         configs:dict = yaml.load(open(config_yaml_path, "r"), Loader=yaml.FullLoader)
-        configs["reload_from_ckpt"] = reload_from_ckpt
         configs['model']['params']['first_stage_config']['params']['reload_from_ckpt'] = vae_pretrained_path
         configs['model']['params']['first_stage_config']['params']['vocoder_path'] = vocoder_pretrained_path
-        configs['model']['params']['cond_stage_config']['film_clap_cond1']['params']['pretrained_path'] = clap_for_condition_pretrained_path
         if "precision" in configs.keys(): torch.set_float32_matmul_precision( configs["precision"] )  # highest, high, medium
 
         model_args_dict = configs["model"].get("params", dict())
         model_args_dict['unet_config']['target'] = 'AudioLDMControlNetInfer.Model.ControlNet.UNetWControlNetRMS.UNetWControlNetRMS'
-        model_args_dict['clap_pretrained_path'] = clap_for_cossim_pretrained_path
         latent_diffusion = LatentDiffusionControlRMS(**model_args_dict)
         return latent_diffusion
     

@@ -138,33 +138,6 @@ def create_model(
         model_cfg["fusion_type"] = fusion_type
         model = CLAP(**model_cfg)
 
-        if pretrained:
-            checkpoint_path = ""
-            url = get_pretrained_url(amodel_name, pretrained)
-            if url:
-                checkpoint_path = download_pretrained(url, root=openai_model_cache_dir)
-            elif os.path.exists(pretrained_orig):
-                checkpoint_path = pretrained_orig
-            if checkpoint_path:
-                logging.info(
-                    f"Loading pretrained {amodel_name}-{tmodel_name} weights ({pretrained})."
-                )
-                ckpt = load_state_dict(checkpoint_path, skip_params=True)
-                if 'text_branch.embeddings.position_ids' not in model.state_dict():
-                    assert (model.text_branch.embeddings.position_ids != ckpt['text_branch.embeddings.position_ids']).sum().item() == 0
-                    ckpt.pop('text_branch.embeddings.position_ids')
-                model.load_state_dict(ckpt)
-                param_names = [n for n, p in model.named_parameters()]
-                # for n in param_names:
-                #     print(n, "\t", "Loaded" if n in ckpt else "Unloaded")
-            else:
-                logging.warning(
-                    f"Pretrained weights ({pretrained}) not found for model {amodel_name}."
-                )
-                raise RuntimeError(
-                    f"Pretrained weights ({pretrained}) not found for model {amodel_name}."
-                )
-
         if pretrained_audio:
             if amodel_name.startswith("PANN"):
                 if "Cnn14_mAP" in pretrained_audio:  # official checkpoint
