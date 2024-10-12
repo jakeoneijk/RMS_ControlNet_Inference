@@ -1,32 +1,39 @@
 import numpy as np
-import soundfile as sf
 import torch
+import soundfile as sf
 import librosa
 
 from AudioLDMControlNetInfer.AudioLDMControlNet import AudioLDMControlNet
 from Util.RMS import RMS
+from TorchJaekwon.Util.UtilData import UtilData
 
-rms_reference_audio_path:str = './test.wav'
+rms_ref_audio_path:str = './Examples/rms_ref.wav'
+sample_rate:int = 16000
+duration_sec:float = 10.24
 
-audio, sr = librosa.load(rms_reference_audio_path, sr=16000)
-audio:torch.Tensor = torch.from_numpy(audio).unsqueeze(0) #[1,time]
-rms:torch.Tensor = torch.from_numpy(RMS.get_rms_fit_to_audio_ldm_mel(audio=audio)) #[1, time/hop]
+def load_audio(audio_path:str)->np.ndarray:
+    audio, _ = librosa.load(audio_path, sr=sample_rate)
+    audio:torch.Tensor = torch.from_numpy(audio).unsqueeze(0) #[1,time]
+    audio = UtilData.fix_length(data=audio, length=int(sample_rate * duration_sec))
+    return audio
+
+rms_ref_audio:torch.Tensor = load_audio(rms_ref_audio_path)
+rms:torch.Tensor = torch.from_numpy(RMS.get_rms_fit_to_audio_ldm_mel(audio=rms_ref_audio)) #[1, time/hop]
 
 audio_ldm_controlnet = AudioLDMControlNet(
-    config_yaml_path = './AudioLDMControlNetInfer/ModelWeight/audioldm_original.yaml',
     control_net_pretrained_path = './AudioLDMControlNetInfer/ModelWeight/ControlNetstep300000.pth',
-    vae_pretrained_path = './AudioLDMControlNetInfer/ModelWeight/vae_mel_16k_64bins.ckpt',
-    vocoder_pretrained_path='./AudioLDMControlNetInfer/ModelWeight/hifigan_16k_64bins',
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 )
-generated_audio_by_text:np.ndarray = audio_ldm_controlnet.generate(
-    text_prompt='people fart',
-    rms=rms
-)
-sf.write('./generated_audio_by_text.wav', generated_audio_by_text, samplerate= 16000)
 
-generated_audio_by_waveform:np.ndarray = audio_ldm_controlnet.generate(
-    waveform=audio,
+generated_audio_by_text:np.ndarray = audio_ldm_controlnet.generate(
+    text_prompt='dog bark loud',
     rms=rms
 )
-sf.write('./generated_audio_by_waveform.wav', generated_audio_by_waveform, samplerate= 16000)
+sf.write('./example_text_timb.wav', generated_audio_by_text, samplerate= sample_rate)
+
+timb_ref_audio = load_audio('./Examples/timb_ref(footstep).mp3')
+generated_audio_by_waveform:np.ndarray = audio_ldm_controlnet.generate(
+    waveform=timb_ref_audio,
+    rms=rms
+)
+sf.write('./example_audio_timb.wav', generated_audio_by_waveform, samplerate= sample_rate)

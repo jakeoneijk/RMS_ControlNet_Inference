@@ -1,34 +1,28 @@
 from typing import Optional
 
+import os
 import yaml
 import torch
 import numpy
-
-from TorchJaekwon.GetModule import GetModule
 
 from AudioLDMControlNetInfer.Model.ControlNet.LatentDiffusionControlRMS import LatentDiffusionControlRMS
 
 class AudioLDMControlNet:
     def __init__(self,
-                 config_yaml_path:str,
                  control_net_pretrained_path:str,
-                 vae_pretrained_path:str,
-                 vocoder_pretrained_path:str,
-                 device:torch.device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+                 device:torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                  ) -> None:
         self.device = device
-        self.model = self.get_model(config_yaml_path=config_yaml_path, 
-                                    vae_pretrained_path = vae_pretrained_path, 
-                                    vocoder_pretrained_path = vocoder_pretrained_path)
+        self.model = self.get_model()
         self.pretrained_load(control_net_pretrained_path)
         
-    def get_model(self, 
-                  config_yaml_path:str, 
-                  vae_pretrained_path:str,
-                  vocoder_pretrained_path:str) -> None:
+    def get_model(self) -> None:
+        config_yaml_path:str = f"{os.path.dirname(os.path.abspath(__file__))}/Config/audioldm_original.yaml"
+        vocoder_config_path:str = f"{os.path.dirname(os.path.abspath(__file__))}/Config/hifigan_16k_64bins"
+
         configs:dict = yaml.load(open(config_yaml_path, "r"), Loader=yaml.FullLoader)
-        configs['model']['params']['first_stage_config']['params']['reload_from_ckpt'] = vae_pretrained_path
-        configs['model']['params']['first_stage_config']['params']['vocoder_path'] = vocoder_pretrained_path
+        configs['model']['params']['first_stage_config']['params']['reload_from_ckpt'] = None
+        configs['model']['params']['first_stage_config']['params']['vocoder_path'] = vocoder_config_path
         if "precision" in configs.keys(): torch.set_float32_matmul_precision( configs["precision"] )  # highest, high, medium
 
         model_args_dict = configs["model"].get("params", dict())

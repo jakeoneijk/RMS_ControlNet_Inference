@@ -276,9 +276,9 @@ def get_vocoder(config, device, mel_bins, model_path):
         config = hifigan.AttrDict(config)
         vocoder = hifigan.Generator_HiFiRes(config)
 
-    ckpt = torch.load(model_path + ".ckpt")
-    ckpt = torch_version_orig_mod_remove(ckpt)
-    vocoder.load_state_dict(ckpt["generator"])
+    #ckpt = torch.load(model_path + ".ckpt")
+    #ckpt = torch_version_orig_mod_remove(ckpt)
+    #vocoder.load_state_dict(ckpt["generator"])
     vocoder.eval()
     vocoder.remove_weight_norm()
     vocoder.to(device)

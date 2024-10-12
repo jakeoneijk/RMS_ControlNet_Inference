@@ -36,37 +36,20 @@ class LatentDiffusionControlRMS(LatentDiffusion):
         self,
         batch,
         k,
-        return_first_stage_encode=True,
         return_decoding_output=False,
-        return_encoder_input=False,
-        return_encoder_output=False,
         unconditional_prob_cfg=0.1,
         is_no_text:bool = True
     ):  
         
         ret = {
-            #'fbank': batch["log_mel_spec"].unsqueeze(1).to(memory_format=torch.contiguous_format).float(),
-            #'stft': batch["stft"].to(memory_format=torch.contiguous_format).float(),
             'waveform': None if batch["waveform"] is None else batch["waveform"].to(memory_format=torch.contiguous_format).float(),
-            #'text': list(batch["text"]),
-            #'fname': batch["fname"]
         }
 
         if 'text' in batch: ret['text'] = list(batch["text"])
 
         for key in batch.keys():
             if key not in ret.keys(): ret[key] = batch[key]
-        '''
-        x = ret[k]
-
-        x = x.to(self.device)
-
-        if return_first_stage_encode:
-            encoder_posterior = self.encode_first_stage(x)
-            z = self.get_first_stage_encoding(encoder_posterior).detach()
-        else:
-            z = None
-        '''
+            
         z = None
 
         cond_dict = {}
@@ -116,12 +99,6 @@ class LatentDiffusionControlRMS(LatentDiffusion):
         if return_decoding_output:
             xrec = self.decode_first_stage(z)
             out += [xrec]
-
-        if return_encoder_input:
-            out += [x]
-
-        if return_encoder_output:
-            out += [encoder_posterior]
 
         if not self.conditional_dry_run_finished:
             self.conditional_dry_run_finished = True
@@ -178,18 +155,6 @@ class LatentDiffusionControlRMS(LatentDiffusion):
             else:
                 continue
 
-        # if not self.being_verbosed_once:
-        #     print("The input shape to the diffusion model is as follows:")
-        #     print("xc", xc.size())
-        #     print("t", t.size())
-        #     for i in range(len(context_list)):
-        #         print(
-        #             "context_%s" % i, context_list[i].size(), attn_mask_list[i].size()
-        #         )
-        #     if y is not None:
-        #         print("y", y.size())
-        #     self.being_verbosed_once = True
-
         out = self.model.diffusion_model( xc, t, rms = cond_dict['control_net_condition'] if w_control_net_condition else None, context_list=context_list, y=y, context_attn_mask_list=attn_mask_list)
         x_recon =  out
 
@@ -208,11 +173,9 @@ class LatentDiffusionControlRMS(LatentDiffusion):
         n_gen=1,
         unconditional_guidance_scale=1.0,
         unconditional_conditioning=None,
-        name=None,
         use_plms=False,
         limit_num=None,
         clap_embed_mode:Literal['text', 'audio'] = 'text',
-        **kwargs,
     ):
         # Generate n_gen times and select the best
         # Batch: audio, text, fnames
@@ -268,7 +231,6 @@ class LatentDiffusionControlRMS(LatentDiffusion):
                     ].get_unconditional_condition(batch_size)
 
             unconditional_conditioning['control_net_condition'] = batch['control_net_condition']
-            #fnames = list(batch["fname"])
 
             samples, _ = self.sample_log(
                 cond=c,
@@ -318,7 +280,6 @@ class LatentDiffusionControlRMS(LatentDiffusion):
         ddim_steps,
         unconditional_guidance_scale=1.0,
         unconditional_conditioning=None,
-        use_plms=False,
         mask=None,
         **kwargs,
     ):
@@ -328,7 +289,7 @@ class LatentDiffusionControlRMS(LatentDiffusion):
             shape = (self.channels, self.latent_t_size, self.latent_f_size)
 
         intermediate = None
-        if ddim and not use_plms:
+        if ddim:
             print("Use ddim sampler")
 
             ddim_sampler = DDIMSamplerForControlNet(cfg_of_control_net=self.cfg_of_control_net, model = self)
@@ -343,21 +304,6 @@ class LatentDiffusionControlRMS(LatentDiffusion):
                 mask=mask,
                 **kwargs,
             )
-        elif use_plms:
-            print("Use plms sampler")
-            plms_sampler = PLMSSampler(self)
-            samples, intermediates = plms_sampler.sample(
-                ddim_steps,
-                batch_size,
-                shape,
-                cond,
-                verbose=False,
-                unconditional_guidance_scale=unconditional_guidance_scale,
-                mask=mask,
-                unconditional_conditioning=unconditional_conditioning,
-                **kwargs,
-            )
-
         else:
             print("Use DDPM sampler")
             samples, intermediates = self.sample(
