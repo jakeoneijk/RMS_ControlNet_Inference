@@ -21,7 +21,7 @@ rms_ref_audio:torch.Tensor = load_audio(rms_ref_audio_path)
 rms:torch.Tensor = torch.from_numpy(RMS.get_rms_fit_to_audio_ldm_mel(audio=rms_ref_audio)) #[1, time/hop]
 
 audio_ldm_controlnet = AudioLDMControlNet(
-    control_net_pretrained_path = './AudioLDMControlNetInfer/ModelWeight/ControlNetstep300000.pth',
+    control_net_pretrained_path = './ControlNetstep300000.pth',
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 )
 
