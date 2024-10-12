@@ -1,2 +1,0 @@
-TORCH_JAEKWON_PATH='./TorchJAEKWON'
-pip install -e "$TORCH_JAEKWON_PATH"
