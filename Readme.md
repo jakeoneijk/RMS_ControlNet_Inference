@@ -38,7 +38,7 @@ source ./Script/2_setup.sh
 
 ### Download pretrained weights. 
 
-[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/datasets/jakeoneijk/RMS_ControlNet_weights)
+[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/datasets/jakeoneijk/RMS_ControlNet_weights/tree/main)
 
 ## Use
 ### Please check Test.py
