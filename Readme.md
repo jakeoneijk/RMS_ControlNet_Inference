@@ -66,3 +66,20 @@ duration_sec:float = 10.24
 rms_ref_audio:torch.Tensor = load_audio(rms_ref_audio_path)
 rms:torch.Tensor = torch.from_numpy(RMS.get_rms_fit_to_audio_ldm_mel(audio=rms_ref_audio))
 ```
+
+You can generate audio conditioned on both RMS and text prompts
+```python
+generated_audio_by_text:np.ndarray = audio_ldm_controlnet.generate(
+    text_prompt='dog bark loud',
+    rms=rms
+)
+```
+
+You can also use audio prompts to condition the timbre
+```
+timb_ref_audio = load_audio('./Examples/timb_ref(footstep).mp3')
+generated_audio_by_waveform:np.ndarray = audio_ldm_controlnet.generate(
+    waveform=timb_ref_audio,
+    rms=rms
+)
+```
