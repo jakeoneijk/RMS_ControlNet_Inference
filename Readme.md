@@ -1,6 +1,8 @@
 # RMS-ControlNet
 [![arXiv](https://img.shields.io/badge/arXiv-2408.11915-red.svg?style=flat-square)](https://www.arxiv.org/abs/2408.11915) [![githubio](https://img.shields.io/badge/GitHub.io-Audio_Samples-blue?logo=Github&style=flat-square)](https://jnwnlee.github.io/video-foley-demo/)
 
+![Figure](./Figure.png)
+
 This is a PyTorch implementation of RMS-ControlNet, a submodule of Video-Foley.
 
 If you find this repository helpful, please consider citing it.
