@@ -85,3 +85,9 @@ generated_audio_by_waveform:np.ndarray = audio_ldm_controlnet.generate(
     rms=rms
 )
 ```
+
+## References
+- [AudioLDM](https://github.com/haoheliu/AudioLDM-training-finetuning)(provided by the authors: please follow the CC-BY-NC-SA 4.0 license)
+    - AudioLDM-s: [```audioldm-s-full.ckpt```](https://zenodo.org/records/7600541/files/audioldm-s-full)
+    - Others (CLAP, VAE, HifiGAN): [```checkpoints.tar```](https://drive.google.com/file/d/1T6EnuAHIc8ioeZ9kB1OZ_WGgwXAVGOZS/view?usp=drive_link)
+- [ControlNet](https://github.com/lllyasviel/ControlNet)
